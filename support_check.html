@@ -1,0 +1,25 @@
+<script>
+  const r = new ReadableStream( {
+    start(controller) {
+      controller.enqueue(new Uint8Array([65, 66, 67]));
+      controller.close();
+    }
+  });
+  
+  // (from: https://qiita.com/ryounagaoka/items/4736c225bdd86a74d59c)
+  const path = Math.random().toString(36).slice(-8);
+  const url = `https://ppng.io/${path}`;
+  
+  fetch(url, {
+    method: "POST",
+    body: r,
+    allowHTTP1ForStreamingUpload: true,
+  });
+  
+  (async () => {
+    const res = await fetch(url);
+    const text = await res.text()
+    const readableStreamSupport = text === 'ABC';
+    document.write(`support: ${readableStreamSupport}, text: ${text}`);
+  })();
+</script>
