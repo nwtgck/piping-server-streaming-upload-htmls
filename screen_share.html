@@ -1,0 +1,28 @@
+<script>
+function blobToUint8Array(blob) {
+  return new Promise((resolve, reject) => {
+    const fileReader = new FileReader();
+    fileReader.onload = () => resolve( new Uint8Array(fileReader.result));
+    fileReader.onerror = reject;
+    fileReader.readAsArrayBuffer(blob);
+  });
+}
+(async () => {
+  const mediaStream = await navigator.mediaDevices.getDisplayMedia({video: true});
+  const readableStream = new ReadableStream({
+    start(ctrl){
+      const recorder = new MediaRecorder(mediaStream);
+      recorder.ondataavailable =  async (e) => {
+        ctrl.enqueue(await blobToUint8Array(e.data));
+      };
+      recorder.start(200);
+    }
+  });
+
+  fetch("https://ppng.io/myvideo", {
+    method: 'POST',
+    body: readableStream,
+    allowHTTP1ForStreamingUpload: true,
+  });
+})();
+</script>
