@@ -2,7 +2,7 @@
 function blobToUint8Array(blob) {
   return new Promise((resolve, reject) => {
     const fileReader = new FileReader();
-    fileReader.onload = () => resolve( new Uint8Array(fileReader.result));
+    fileReader.onload = () => resolve(new Uint8Array(fileReader.result));
     fileReader.onerror = reject;
     fileReader.readAsArrayBuffer(blob);
   });
@@ -12,7 +12,7 @@ function blobToUint8Array(blob) {
   const readableStream = new ReadableStream({
     start(ctrl){
       const recorder = new MediaRecorder(mediaStream);
-      recorder.ondataavailable =  async (e) => {
+      recorder.ondataavailable = async (e) => {
         ctrl.enqueue(await blobToUint8Array(e.data));
       };
       recorder.start(200);
