@@ -1,0 +1,47 @@
+<input placeholder="Your ID" id='your_id'>
+<input placeholder="Peer ID" id='peer_id'>
+<button onclick='connect(this)'>Connect</button>
+<div id="message"></div>
+<video id="peer_video" controls></video>
+<script>
+async function connect(e) {
+  // Disable inputs
+  window.your_id.disabled = window.peer_id.disabled = e.disabled = true;
+  // Synchronize
+  await Promise.all([
+    fetch(`https://ppng.io/wait/${window.your_id.value}`),
+    fetch(`https://ppng.io/wait/${window.peer_id.value}`, { method: 'POST' })
+  ]);
+  window.message.innerText = "Started!";
+
+  const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: { echoCancellation: true } });
+  const readableStream = new ReadableStream({
+    start(ctrl){
+      const recorder = new MediaRecorder(mediaStream);
+      recorder.ondataavailable = async (e) => {
+        ctrl.enqueue(await blobToUint8Array(e.data));
+      };
+      recorder.start(100);
+    }
+  });
+
+  fetch(`https://ppng.io/${window.peer_id.value}`, {
+    method: 'POST',
+    body: readableStream,
+    allowHTTP1ForStreamingUpload: true,
+  });
+
+  // Play the peer video
+  window.peer_video.src = `https://ppng.io/${window.your_id.value}`;
+  window.peer_video.play();
+}
+
+function blobToUint8Array(blob) {
+  return new Promise((resolve, reject) => {
+    const fileReader = new FileReader();
+    fileReader.onload = () => resolve(new Uint8Array(fileReader.result));
+    fileReader.onerror = reject;
+    fileReader.readAsArrayBuffer(blob);
+  });
+}
+</script>
