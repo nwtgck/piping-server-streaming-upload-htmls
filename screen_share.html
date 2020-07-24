@@ -1,12 +1,4 @@
 <script>
-function blobToUint8Array(blob) {
-  return new Promise((resolve, reject) => {
-    const fileReader = new FileReader();
-    fileReader.onload = () => resolve(new Uint8Array(fileReader.result));
-    fileReader.onerror = reject;
-    fileReader.readAsArrayBuffer(blob);
-  });
-}
 (async () => {
   const mediaStream = await navigator.mediaDevices.getDisplayMedia({video: true});
   const readableStream = new ReadableStream({
@@ -15,7 +7,7 @@ function blobToUint8Array(blob) {
       recorder.ondataavailable = async (e) => {
         ctrl.enqueue(await blobToUint8Array(e.data));
       };
-      recorder.start(200);
+      recorder.start(100);
     }
   });
 
@@ -25,4 +17,13 @@ function blobToUint8Array(blob) {
     allowHTTP1ForStreamingUpload: true,
   });
 })();
+
+function blobToUint8Array(blob) {
+  return new Promise((resolve, reject) => {
+    const fileReader = new FileReader();
+    fileReader.onload = () => resolve(new Uint8Array(fileReader.result));
+    fileReader.onerror = reject;
+    fileReader.readAsArrayBuffer(blob);
+  });
+}
 </script>
