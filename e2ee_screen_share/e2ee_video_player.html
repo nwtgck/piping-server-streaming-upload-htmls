@@ -1,0 +1,15 @@
+<script>
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
+
+function view() {
+  window.player.src = "/e2ee_screen_share/swvideo#myvideo";
+  window.player.play();
+}
+</script>
+<video id="player" controls></video><br>
+<button onclick="view()">view</button>

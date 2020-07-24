@@ -1,0 +1,46 @@
+<button onclick="share()">Share</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/openpgp/4.10.7/compat/openpgp.min.js"></script>
+<script>
+const password = 'my secret password';
+
+async function share() {
+  const mediaStream = await navigator.mediaDevices.getDisplayMedia({video: true});
+  const readableStream = new ReadableStream({
+    start(ctrl){
+      const recorder = new MediaRecorder(mediaStream);
+      recorder.ondataavailable = async (e) => {
+        ctrl.enqueue(await blobToUint8Array(e.data));
+      };
+      recorder.start(100);
+    }
+  });
+
+  // E2E encryption
+  const encryptedReadableStream = await encryptStream(readableStream, password)
+
+  fetch("https://ppng.io/myvideo", {
+    method: 'POST',
+    body: encryptedReadableStream,
+    allowHTTP1ForStreamingUpload: true,
+  });
+}
+
+function blobToUint8Array(blob) {
+  return new Promise((resolve, reject) => {
+    const fileReader = new FileReader();
+    fileReader.onload = () => resolve(new Uint8Array(fileReader.result));
+    fileReader.onerror = reject;
+    fileReader.readAsArrayBuffer(blob);
+  });
+}
+
+async function encryptStream(readableStream, password) {
+  const options = {
+    message: openpgp.message.fromBinary(readableStream),
+    passwords: [password],
+    armor: false
+  };
+  const ciphertext = await openpgp.encrypt(options);
+  return ciphertext.message.packets.write();
+}
+</script>
