@@ -1,0 +1,14 @@
+<script>
+const readableStream = new ReadableStream({
+  pull(ctrl) {
+    // random bytes
+    ctrl.enqueue(window.crypto.getRandomValues(new Uint32Array(128)));
+  }
+}).pipeThrough(new CompressionStream('gzip'))
+
+fetch("https://ppng.io/mytext", {
+  method: 'POST',
+  body: readableStream,
+  allowHTTP1ForStreamingUpload: true,
+});
+</script>
