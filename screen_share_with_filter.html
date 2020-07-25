@@ -1,37 +1,16 @@
-<canvas id="canvas"></canvas><br>
-<button onclick="start()">Start</button>
+<button onclick="share()">Share</button>
 
 <script src="https://raw.githack.com/bennyschudel/JSManipulate/0a6f6c236bbe8456870f3da1af6c5055ab210270/script/jsmanipulate.js"></script>
 <script>
-async function start() {
-  const ctx = window.canvas.getContext('2d');
+async function share() {
+  // Get screen
   const mediaStream = await navigator.mediaDevices.getDisplayMedia({video: true});
+  // Sepia filter
+  const filteredMediaStream = await sepiaMediaStream(mediaStream);
+  // Convert MediaStream to ReadableStream
+  const readableStream = mediaStreamToReadableStream(filteredMediaStream, 100);
 
-  const memVideo = document.createElement('video');
-  memVideo.srcObject = mediaStream;
-  await memVideo.play();
-
-  const width = memVideo.videoWidth;
-  const height = memVideo.videoHeight;
-  const memCanvas = document.createElement('canvas');
-  window.canvas.width = memCanvas.width = width;
-  window.canvas.height = memCanvas.height = height;
-  const memCtx = memCanvas.getContext('2d');
-
-  (function loop(){
-    memCtx.drawImage(memVideo, 0, 0, width, height);
-    const frame = memCtx.getImageData(0, 0, width, height);
-
-    JSManipulate.sepia.filter(frame);
-    ctx.putImageData(frame, 0, 0);
-    setTimeout(loop, 0);
-  })();
-
-  console.log()
-  const mediaStream2 = window.canvas.captureStream()
-
-  const readableStream = mediaStreamToReadableStream(mediaStream2, 100);
-
+  // Share
   fetch("https://ppng.io/myvideo", {
     method: 'POST',
     body: readableStream,
@@ -58,5 +37,31 @@ function mediaStreamToReadableStream(mediaStream, timeslice) {
       recorder.start(timeslice);
     }
   });
+}
+
+async function sepiaMediaStream(mediaStream) {
+  const memVideo = document.createElement('video');
+  memVideo.srcObject = mediaStream;
+  await memVideo.play();
+
+  const width = memVideo.videoWidth;
+  const height = memVideo.videoHeight;
+  const srcCanvas = document.createElement('canvas');
+  const dstCanvas = document.createElement('canvas');
+  srcCanvas.width = dstCanvas.width = width;
+  srcCanvas.height = dstCanvas.height = height;
+  const srcCtx = srcCanvas.getContext('2d');
+  const dstCtx = dstCanvas.getContext('2d');
+
+  (function loop(){
+    srcCtx.drawImage(memVideo, 0, 0, width, height);
+    const frame = srcCtx.getImageData(0, 0, width, height);
+
+    JSManipulate.sepia.filter(frame);
+    dstCtx.putImageData(frame, 0, 0);
+    setTimeout(loop, 0);
+  })();
+
+  return dstCanvas.captureStream();
 }
 </script>
