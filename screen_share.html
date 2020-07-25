@@ -1,15 +1,7 @@
 <script>
 (async () => {
   const mediaStream = await navigator.mediaDevices.getDisplayMedia({video: true});
-  const readableStream = new ReadableStream({
-    start(ctrl){
-      const recorder = new MediaRecorder(mediaStream);
-      recorder.ondataavailable = async (e) => {
-        ctrl.enqueue(await blobToUint8Array(e.data));
-      };
-      recorder.start(100);
-    }
-  });
+  const readableStream = mediaStreamToReadableStream(mediaStream, 100);
 
   fetch("https://ppng.io/myvideo", {
     method: 'POST',
@@ -24,6 +16,18 @@ function blobToUint8Array(blob) {
     fileReader.onload = () => resolve(new Uint8Array(fileReader.result));
     fileReader.onerror = reject;
     fileReader.readAsArrayBuffer(blob);
+  });
+}
+
+function mediaStreamToReadableStream(mediaStream, timeslice) {
+  return new ReadableStream({
+    start(ctrl){
+      const recorder = new MediaRecorder(mediaStream);
+      recorder.ondataavailable = async (e) => {
+        ctrl.enqueue(await blobToUint8Array(e.data));
+      };
+      recorder.start(timeslice);
+    }
   });
 }
 </script>
