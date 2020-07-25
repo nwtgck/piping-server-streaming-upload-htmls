@@ -1,6 +1,8 @@
 <script>
 (async () => {
+  // Get display
   const mediaStream = await navigator.mediaDevices.getDisplayMedia({video: true});
+  // Convert MediaStream to ReadableStream
   const readableStream = mediaStreamToReadableStream(mediaStream, 100);
 
   fetch("https://ppng.io/myvideo", {
@@ -10,6 +12,7 @@
   });
 })();
 
+// Convert MediaStream to ReadableStream
 function mediaStreamToReadableStream(mediaStream, timeslice) {
   return new ReadableStream({
     start(ctrl){

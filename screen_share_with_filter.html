@@ -18,6 +18,7 @@ async function share() {
   });
 }
 
+// Convert MediaStream to ReadableStream
 function mediaStreamToReadableStream(mediaStream, timeslice) {
   return new ReadableStream({
     start(ctrl){
