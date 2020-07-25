@@ -1,0 +1,14 @@
+<script>
+const readableStream = new ReadableStream({
+  pull(ctrl) {
+    // "ABCDE\n"
+    ctrl.enqueue(new Uint8Array([65, 66, 67, 68, 69, 10]));
+  }
+});
+
+fetch("https://ppng.io/mytext", {
+  method: 'POST',
+  body: readableStream,
+  allowHTTP1ForStreamingUpload: true,
+});
+</script>
