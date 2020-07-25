@@ -1,0 +1,85 @@
+<!--░██╗░░░░░░░██╗░░██╗░░██████╗░-->
+<!--░██║░░██╗░░██║░░██║░░██╔══██╗-->
+<!--░╚██╗████╗██╔╝░░██║░░██████╔╝-->
+<!--░░████╔═████║░░░██║░░██╔═══╝░-->
+<!--░░╚██╔╝░╚██╔╝░░░██║░░██║░░░░░-->
+<!--░░░╚═╝░░░╚═╝░░░░╚═╝░░╚═╝░░░░░-->
+<!-- Small file is supported, but large file is not streamed yet.-->
+
+<input type="file" id="input_file">
+<input placeholder="path" id="path">
+<button onclick="send()">Send</button>
+
+<script src="https://wzrd.in/standalone/stream-browserify@latest"></script>
+<script src="https://wzrd.in/standalone/buffer@latest"></script>
+<script>window.Buffer = buffer.Buffer</script>
+<!--<script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>-->
+<!--<script src="https://cdn.rawgit.com/creatorrr/web-streams-polyfill/master/dist/polyfill.min.js"></script>-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.5.0/jszip.min.js"></script>
+<script>
+// (base: https://jsfiddle.net/Lxwvco3u/1/)
+
+// // window.Buffer = buffer.Buffer
+// const readable = new ReadableStream({
+//   pull(ctrl) {
+//     ctrl.enqueue(new Uint8Array([65, 66, 67, 10]));
+//     ctrl.close();
+//   }
+// })
+// const reader = readable.getReader();
+//
+// const rs = streamBrowserify.Readable();
+// rs._read = async () => {
+//   console.log('_read');
+//   const { done, value } = await reader.read();
+//   rs.push( done ? null : new Buffer(value) );
+// };
+//
+// const zip = new JSZip();
+// zip.file('myfilename', rs);
+// const internalStream = zip.generateInternalStream({type: "uint8array"});
+// console.log({internalStream});
+// internalStream.on('data', console.log).resume();
+
+function send() {
+  const file = window.input_file.files[0];
+  // Convert file to ReadableStream
+  const readableStream = new Response(file).body;
+  // Zip
+  const zippedReadableStream = zipReadableStream(readableStream, file.name);
+  fetch(`https://ppng.io/${window.path.value}`, {
+    method: 'POST',
+    body: zippedReadableStream,
+    allowHTTP1ForStreamingUpload: true,
+  });
+}
+
+function zipReadableStream(readableStream, name) {
+  const zip = new JSZip();
+  // Convert ReadableStream to streamBrowserify.Readable
+  const readable = readableStreamToReadable(readableStream);
+  zip.file(name, readable);
+  const internalStream = zip.generateInternalStream({type: "uint8array"});
+  return new ReadableStream({
+    start(ctrl) {
+      internalStream
+        .on('data', (data) => {
+          console.log({data});
+          ctrl.enqueue(data);
+        })
+        .on('end', () => ctrl.close())
+        .resume();
+    }
+  });
+}
+
+function readableStreamToReadable(readableStream) {
+  const reader = readableStream.getReader();
+  const readable = streamBrowserify.Readable();
+  readable._read = async () => {
+    const { done, value } = await reader.read();
+    readable.push( done ? null : new Buffer(value) );
+  };
+  return readable;
+}
+</script>
