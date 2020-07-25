@@ -1,0 +1,67 @@
+<button onclick="share()">Share</button>
+
+<script src="https://raw.githack.com/bennyschudel/JSManipulate/0a6f6c236bbe8456870f3da1af6c5055ab210270/script/jsmanipulate.js"></script>
+<script>
+async function share() {
+  // Get screen
+  const mediaStream = await navigator.mediaDevices.getDisplayMedia({video: true});
+  // Sepia filter
+  const filteredMediaStream = await sepiaMediaStream(mediaStream);
+  // Convert MediaStream to ReadableStream
+  const readableStream = mediaStreamToReadableStream(filteredMediaStream, 100);
+
+  // Share
+  fetch("https://ppng.io/myvideo", {
+    method: 'POST',
+    body: readableStream,
+    allowHTTP1ForStreamingUpload: true,
+  });
+}
+
+function blobToUint8Array(blob) {
+  return new Promise((resolve, reject) => {
+    const fileReader = new FileReader();
+    fileReader.onload = () => resolve(new Uint8Array(fileReader.result));
+    fileReader.onerror = reject;
+    fileReader.readAsArrayBuffer(blob);
+  });
+}
+
+function mediaStreamToReadableStream(mediaStream, timeslice) {
+  return new ReadableStream({
+    start(ctrl){
+      const recorder = new MediaRecorder(mediaStream);
+      recorder.ondataavailable = async (e) => {
+        ctrl.enqueue(await blobToUint8Array(e.data));
+      };
+      recorder.start(timeslice);
+    }
+  });
+}
+
+async function sepiaMediaStream(mediaStream) {
+  const memVideo = document.createElement('video');
+  memVideo.srcObject = mediaStream;
+  await memVideo.play();
+
+  const width = memVideo.videoWidth;
+  const height = memVideo.videoHeight;
+  const srcCanvas = document.createElement('canvas');
+  const dstCanvas = document.createElement('canvas');
+  srcCanvas.width = dstCanvas.width = width;
+  srcCanvas.height = dstCanvas.height = height;
+  const srcCtx = srcCanvas.getContext('2d');
+  const dstCtx = dstCanvas.getContext('2d');
+
+  (function loop(){
+    srcCtx.drawImage(memVideo, 0, 0, width, height);
+    const frame = srcCtx.getImageData(0, 0, width, height);
+
+    JSManipulate.sepia.filter(frame);
+    dstCtx.putImageData(frame, 0, 0);
+    setTimeout(loop, 0);
+  })();
+
+  return dstCanvas.captureStream();
+}
+</script>
