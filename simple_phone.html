@@ -13,17 +13,10 @@ async function connect(e) {
     fetch(`https://ppng.io/wait/${window.peer_id.value}`, { method: 'POST' })
   ]);
   window.message.innerText = "Started!";
-
+  // Get audio
   const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true } });
-  const readableStream = new ReadableStream({
-    start(ctrl){
-      const recorder = new MediaRecorder(mediaStream);
-      recorder.ondataavailable = async (e) => {
-        ctrl.enqueue(await blobToUint8Array(e.data));
-      };
-      recorder.start(100);
-    }
-  });
+  // Convert MediaStream to ReadableStream
+  const readableStream = mediaStreamToReadableStream(mediaStream, 100);
 
   fetch(`https://ppng.io/${window.peer_id.value}`, {
     method: 'POST',
@@ -36,12 +29,15 @@ async function connect(e) {
   window.peer_audio.play();
 }
 
-function blobToUint8Array(blob) {
-  return new Promise((resolve, reject) => {
-    const fileReader = new FileReader();
-    fileReader.onload = () => resolve(new Uint8Array(fileReader.result));
-    fileReader.onerror = reject;
-    fileReader.readAsArrayBuffer(blob);
+function mediaStreamToReadableStream(mediaStream, timeslice) {
+  return new ReadableStream({
+    start(ctrl){
+      const recorder = new MediaRecorder(mediaStream);
+      recorder.ondataavailable = async (e) => {
+        ctrl.enqueue(new Uint8Array(await e.data.arrayBuffer()));
+      };
+      recorder.start(timeslice);
+    }
   });
 }
 </script>
