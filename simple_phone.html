@@ -29,6 +29,7 @@ async function connect(e) {
   window.peer_audio.play();
 }
 
+// Convert MediaStream to ReadableStream
 function mediaStreamToReadableStream(mediaStream, timeslice) {
   return new ReadableStream({
     start(ctrl){

@@ -18,6 +18,7 @@ async function share() {
   });
 }
 
+// Convert MediaStream to ReadableStream
 function mediaStreamToReadableStream(mediaStream, timeslice) {
   return new ReadableStream({
     start(ctrl){
@@ -30,6 +31,7 @@ function mediaStreamToReadableStream(mediaStream, timeslice) {
   });
 }
 
+// Encrypt ReadableStream with password by OpenPGP
 async function encryptStream(readableStream, password) {
   const options = {
     message: openpgp.message.fromBinary(readableStream),
