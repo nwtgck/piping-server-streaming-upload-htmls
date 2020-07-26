@@ -1,0 +1,44 @@
+<input type="file" id="input_file">
+<input placeholder="path" id="path">
+<button onclick="send()">Send</button><br>
+<progress id="progress_bar" value="0" max="100"></progress><br>
+<div id="message"></div>
+
+<script>
+function send() {
+  const file = window.input_file.files[0];
+  // Convert file to ReadableStream
+  const readableStream = new Response(file).body;
+  // Attach progress
+  const readableStreamWithProgress = getReadableStreamWithProgress(readableStream, (loaded) => {
+    // Show progress
+    const progress = window.progress_bar.value = loaded / file.size * 100;
+    window.message.innerText = `${loaded} bytes (${progress.toFixed(2)}%)`;
+  });
+
+  // Send a file
+  fetch(`https://ppng.io/${window.path.value}`, {
+    method: 'POST',
+    body: readableStreamWithProgress,
+    allowHTTP1ForStreamingUpload: true,
+  });
+}
+
+function getReadableStreamWithProgress(baseStream, callback) {
+  const reader = baseStream.getReader();
+  let loaded = 0;
+  callback(loaded);
+  return new ReadableStream({
+    async pull(ctrl) {
+      const { done, value } = await reader.read();
+      if (done) {
+        ctrl.close();
+        return;
+      }
+      ctrl.enqueue(value);
+      loaded += value.byteLength;
+      callback(loaded);
+    }
+  });
+}
+</script>
