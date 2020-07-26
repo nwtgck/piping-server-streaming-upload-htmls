@@ -3,15 +3,14 @@
 <script>
 const readableStream = new ReadableStream({
   start(ctrl) {
-    const encoder = new TextEncoder();
     window.myinput.onkeyup = (ev) => {
       if (ev.key === 'Enter') {
-        ctrl.enqueue(encoder.encode(ev.target.value+'\n'));
+        ctrl.enqueue(ev.target.value+'\n');
         ev.target.value = '';
       }
     }
   }
-});
+}).pipeThrough(new TextEncoderStream());
 
 fetch("https://ppng.io/mytext", {
   method: 'POST',
