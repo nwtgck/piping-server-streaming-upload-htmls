@@ -1,5 +1,5 @@
 <script>
-const r = new ReadableStream( {
+const readableStream = new ReadableStream( {
   start(controller) {
     controller.enqueue(new Uint8Array([65, 66, 67]));
     controller.close();
@@ -12,7 +12,7 @@ const url = `https://ppng.io/${path}`;
 
 fetch(url, {
   method: "POST",
-  body: r,
+  body: readableStream,
   allowHTTP1ForStreamingUpload: true,
 });
 

@@ -1,0 +1,9 @@
+<script>
+// (from: https://web.dev/fetch-upload-streaming/#feature-detection)
+const supportsRequestStreams = !new Request('', {
+  body: new ReadableStream(),
+  method: 'POST',
+}).headers.has('Content-Type');
+
+document.write(`support: ${supportsRequestStreams}`)
+</script>
